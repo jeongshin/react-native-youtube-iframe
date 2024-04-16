@@ -7,17 +7,17 @@
         margin: 0;
       }
       .container {
-        position: relative;
-        width: 100%;
-        height: 0;
-        padding-bottom: 56.25%;
-      }
-      .video {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
+        padding-bottom: 56.25%;
+      }
+      .video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
     </style>
   </head>
@@ -51,7 +51,7 @@
         iv_load_policy,
         preventFullScreen_s,
         showClosedCaptions_s,
-      } = JSON.parse(UrlQueryData);
+      } = JSON.parse(UrlQueryData || '{}');
 
       function sendMessageToRN(msg) {
         window.ReactNativeWebView.postMessage(JSON.stringify(msg));
@@ -79,24 +79,25 @@
         player = new YT.Player(randomPlayerId, {
           width: '1000',
           height: '1000',
-          videoId: videoId_s,
+          videoId: 'RC6HjknAlaA',
           playerVars: {
             end: end,
-            rel: rel_s,
+            modestbranding: 1,
             list: list,
             color: color,
             loop: loop_s,
             start: start,
             playsinline: 1,
-            hl: playerLang,
+            hl: 'ko-KR',
+            enablejsapi: 1,
             playlist: playlist,
             listType: listType,
-            controls: controls_s,
+            controls: 0,
+            showinfo: 0,
             fs: preventFullScreen_s,
             cc_lang_pref: cc_lang_pref_s,
-            iv_load_policy: iv_load_policy,
-            modestbranding: modestbranding_s,
-            cc_load_policy: showClosedCaptions_s,
+            iv_load_policy: 3,
+            cc_load_policy: 0,
           },
           events: {
             onReady: onPlayerReady,
@@ -106,6 +107,7 @@
             onPlaybackQualityChange: onPlaybackQualityChange,
           },
         });
+        console.log(player);
       }
 
       function onPlayerError(event) {

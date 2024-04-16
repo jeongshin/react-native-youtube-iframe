@@ -94,7 +94,7 @@ export const MAIN_SCRIPT = (
     cc_lang_pref,
     iv_load_policy,
     modestbranding,
-    controls = true,
+    controls,
     showClosedCaptions,
     preventFullScreen = false,
   } = initialPlayerParams;
@@ -161,17 +161,17 @@ export const MAIN_SCRIPT = (
         margin: 0;
       }
       .container {
-        position: relative;
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 0;
+        height: 100%;
         padding-bottom: 56.25%;
       }
       .video {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
     </style>
   </head>
@@ -204,13 +204,15 @@ export const MAIN_SCRIPT = (
             loop: ${loop_s},
             color: ${color},
             start: ${start},
-            hl: ${playerLang},
-            controls: ${controls_s},
+            controls: 0,
+            showinfo: 0,
             fs: ${preventFullScreen_s},
             cc_lang_pref: '${cc_lang_pref_s}',
-            iv_load_policy: ${iv_load_policy},
-            modestbranding: ${modestbranding_s},
-            cc_load_policy: ${showClosedCaptions_s},
+            hl: 'ko-KR',
+            enablejsapi: 1,
+            modestbranding: 1,
+            iv_load_policy: 3,
+            cc_load_policy: 0,
           },
           events: {
             'onReady': onPlayerReady,
