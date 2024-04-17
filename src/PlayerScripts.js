@@ -1,5 +1,10 @@
 import {MUTE_MODE, PAUSE_MODE, PLAY_MODE, UNMUTE_MODE} from './constants';
 
+export const absoluteFillScript = `
+var element = document.getElementsByClassName('container')[0];
+element.style.position = 'unset';
+true;`;
+
 export const PLAYER_FUNCTIONS = {
   muteVideo: 'player.mute(); true;',
   unMuteVideo: 'player.unMute(); true;',
@@ -173,11 +178,14 @@ export const MAIN_SCRIPT = (
         height: 100%;
         object-fit: cover;
       }
+      .ytp-pause-overlay-container {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="video" id="player" />
+      <div class="video" id="player"></div>
     </div>
 
     <script>
@@ -201,7 +209,7 @@ export const MAIN_SCRIPT = (
             end: ${end},
             rel: ${rel_s},
             playsinline: 1,
-            loop: ${loop_s},
+            loop: 1,
             color: ${color},
             start: ${start},
             controls: 0,

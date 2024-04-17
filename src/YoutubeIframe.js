@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import {Linking, Platform, StyleSheet, View} from 'react-native';
-import {EventEmitter} from 'events';
+import EventEmitter from 'eventemitter3';
 import {WebView} from './WebView';
 import {
   PLAYER_ERROR,
@@ -19,17 +19,16 @@ import {
 import {
   playMode,
   soundMode,
+  absoluteFillScript,
   MAIN_SCRIPT,
   PLAYER_FUNCTIONS,
 } from './PlayerScripts';
-import {deepComparePlayList} from './utils';
 
 const YoutubeIframe = (props, ref) => {
   const {
     height,
     width,
     videoId,
-    playList,
     play = false,
     mute = false,
     volume = 100,
@@ -42,8 +41,6 @@ const YoutubeIframe = (props, ref) => {
     contentScale = 1.0,
     onError = _err => {},
     onReady = _event => {},
-    playListStartIndex = 0,
-    initialPlayerParams,
     allowWebViewZoom = false,
     forceAndroidAutoplay = false,
     onChangeState = _event => {},
@@ -53,12 +50,9 @@ const YoutubeIframe = (props, ref) => {
   } = props;
 
   const [playerReady, setPlayerReady] = useState(false);
-  const lastVideoIdRef = useRef(videoId);
-  const lastPlayListRef = useRef(playList);
-  const initialPlayerParamsRef = useRef(initialPlayerParams || {});
 
   const webViewRef = useRef(null);
-  const eventEmitter = useRef(new EventEmitter());
+  const [eventEmitter] = useState(() => ({current: new EventEmitter()}));
 
   useImperativeHandle(
     ref,
@@ -114,7 +108,14 @@ const YoutubeIframe = (props, ref) => {
           PLAYER_FUNCTIONS.seekToScript(seconds, allowSeekAhead),
         );
       },
+      pause: () => {
+        webViewRef.current.injectJavaScript(PLAYER_FUNCTIONS.pauseVideo);
+      },
+      resume: () => {
+        webViewRef.current.injectJavaScript(PLAYER_FUNCTIONS.playVideo);
+      },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -130,40 +131,20 @@ const YoutubeIframe = (props, ref) => {
       PLAYER_FUNCTIONS.setVolume(volume),
       PLAYER_FUNCTIONS.setPlaybackRate(playbackRate),
     ].forEach(webViewRef.current.injectJavaScript);
-  }, [play, mute, volume, playbackRate, playerReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [play, playerReady]);
 
   useEffect(() => {
-    if (!playerReady || lastVideoIdRef.current === videoId) {
+    if (!playerReady) {
       // no instance of player is ready
       // or videoId has not changed
       return;
     }
 
-    lastVideoIdRef.current = videoId;
-
     webViewRef.current.injectJavaScript(
       PLAYER_FUNCTIONS.loadVideoById(videoId, play),
     );
   }, [videoId, play, playerReady]);
-
-  useEffect(() => {
-    if (!playerReady) {
-      // no instance of player is ready
-      return;
-    }
-
-    // Also, right now, we are helping users by doing "deep" comparisons of playList prop,
-    // but in the next major we should leave the responsibility to user (either via useMemo or moving the array outside)
-    if (!playList || deepComparePlayList(lastPlayListRef.current, playList)) {
-      return;
-    }
-
-    lastPlayListRef.current = playList;
-
-    webViewRef.current.injectJavaScript(
-      PLAYER_FUNCTIONS.loadPlaylist(playList, playListStartIndex, play),
-    );
-  }, [playList, play, playListStartIndex, playerReady]);
 
   const onWebMessage = useCallback(
     event => {
@@ -198,6 +179,7 @@ const YoutubeIframe = (props, ref) => {
         console.warn('[rn-youtube-iframe]', error);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       onReady,
       onError,
@@ -237,9 +219,9 @@ const YoutubeIframe = (props, ref) => {
 
   const source = useMemo(() => {
     const ytScript = MAIN_SCRIPT(
-      lastVideoIdRef.current,
-      lastPlayListRef.current,
-      initialPlayerParamsRef.current,
+      videoId,
+      [],
+      {},
       allowWebViewZoom,
       contentScale,
     );
@@ -256,6 +238,7 @@ const YoutubeIframe = (props, ref) => {
     const data = ytScript.urlEncodedJSON;
 
     return {uri: base + '?data=' + data};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useLocalHTML, contentScale, baseUrlOverride, allowWebViewZoom]);
 
   return (
@@ -267,9 +250,7 @@ const YoutubeIframe = (props, ref) => {
         style={[styles.webView, webViewStyle]}
         mediaPlaybackRequiresUserAction={false}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-        allowsFullscreenVideo={
-          !initialPlayerParamsRef.current.preventFullScreen
-        }
+        allowsFullscreenVideo
         userAgent={
           forceAndroidAutoplay
             ? Platform.select({android: CUSTOM_USER_AGENT, ios: ''})
@@ -279,6 +260,8 @@ const YoutubeIframe = (props, ref) => {
 
         // --
         {...webViewProps}
+        pointerEvents="none"
+        injectedJavaScript={absoluteFillScript}
         // --
 
         // add props that should not be allowed to be overridden below

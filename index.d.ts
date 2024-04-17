@@ -27,6 +27,8 @@ export interface YoutubeIframeRef {
   getPlaybackRate: () => Promise<number>;
   getAvailablePlaybackRates: () => Promise<number[]>;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  pause: () => void;
+  resume: () => void;
 }
 
 export interface InitialPlayerParams {
@@ -40,7 +42,7 @@ export interface InitialPlayerParams {
   preventFullScreen?: boolean;
   playerLang?: String;
   iv_load_policy?: Number;
-  /** 
+  /**
    * @deprecated - This parameter has no effect since August 15, 2023
    * https://developers.google.com/youtube/player_parameters#modestbranding
    */
